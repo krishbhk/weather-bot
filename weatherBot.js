@@ -3,7 +3,7 @@
 
 const { ActivityHandler, MessageFactory } = require('botbuilder');
 
-class EchoBot extends ActivityHandler {
+class WeatherBot extends ActivityHandler {
     constructor() {
         super();
         // See https://aka.ms/about-bot-activity-message to learn more about the message and other activity types.
@@ -15,17 +15,27 @@ class EchoBot extends ActivityHandler {
         });
 
         this.onMembersAdded(async (context, next) => {
-            const membersAdded = context.activity.membersAdded;
-            const welcomeText = 'Hello and welcome!';
-            for (let cnt = 0; cnt < membersAdded.length; ++cnt) {
-                if (membersAdded[cnt].id !== context.activity.recipient.id) {
-                    await context.sendActivity(MessageFactory.text(welcomeText, welcomeText));
-                }
-            }
+            await this.sendWelcomeMsg(context);
             // By calling next() you ensure that the next BotHandler is run.
             await next();
         });
     }
+
+    async sendWelcomeMsg(turnContext) {
+        const { activity } = turnContext;
+        for (const idx in activity.membersAdded) {
+            if (activity.membersAdded[idx].id !== activity.recipient.id) {
+                const welcomeMsg = `Welcome to weather bot. ${ activity.membersAdded[idx].name }.`;
+                await turnContext.sendActivity(welcomeMsg);
+                await this.sendSuggestedActions(turnContext);
+            }
+        }
+    }
+
+    async sendSuggestedActions(turnContext) {
+        const reply = MessageFactory.suggestedActions(['Show weather', 'Know about me'], 'What do you want to do?');
+        await turnContext.sendActivity(reply);
+    }
 }
 
-module.exports.EchoBot = EchoBot;
+module.exports.WeatherBot = WeatherBot;
