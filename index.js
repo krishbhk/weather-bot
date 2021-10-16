@@ -12,7 +12,7 @@ const restify = require('restify');
 
 // Import required bot services.
 // See https://aka.ms/bot-services to learn more about the different parts of a bot.
-const { BotFrameworkAdapter } = require('botbuilder');
+const { BotFrameworkAdapter, MemoryStorage, ConversationState, UserState } = require('botbuilder');
 
 // This bot's main dialog.
 const { WeatherBot } = require('./weatherBot');
@@ -55,8 +55,12 @@ const onTurnErrorHandler = async (context, error) => {
 // Set the onTurnError for the singleton BotFrameworkAdapter.
 adapter.onTurnError = onTurnErrorHandler;
 
+const memoryStorage = new MemoryStorage();
+const userState = new UserState(memoryStorage);
+const conversationState = new ConversationState(memoryStorage);
+
 // Create the main dialog.
-const myBot = new WeatherBot();
+const myBot = new WeatherBot(conversationState, userState);
 
 // Listen for incoming requests.
 server.post('/api/messages', (req, res) => {
