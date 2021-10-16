@@ -1,6 +1,6 @@
 # weather-bot-v2
 
-give the current weather to the user
+Gives current weather info to you.
 
 This bot has been created using [Bot Framework](https://dev.botframework.com), it shows how to create a simple bot that accepts input from the user and echoes it back.
 
