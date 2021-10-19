@@ -1,8 +1,10 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
-
 const { ActivityHandler, MessageFactory } = require('botbuilder');
+
 const { ShowWeatherDialog } = require('./componentDialogs/showWeatherDialog');
+const { KnowMoreDialog } = require('./componentDialogs/knowMoreDialog');
+const { BookFlightDialog } = require('./componentDialogs/bookFlightDialog');
 
 class WeatherBot extends ActivityHandler {
     constructor(conversationState, userState) {
@@ -12,7 +14,10 @@ class WeatherBot extends ActivityHandler {
         this.userState = userState;
 
         this.dialogState = conversationState.createProperty('dialogState');
+
         this.showWeatherDialog = new ShowWeatherDialog(this.conversationState, this.userState);
+        this.KnowMoreDialog = new KnowMoreDialog(this.conversationState, this.userState);
+        this.BookFlightDialog = new BookFlightDialog(this.conversationState, this.userState);
 
         this.previousIntent = this.conversationState.createProperty('previousIntent');
         this.conversationData = this.conversationState.createProperty('conversationData');
@@ -51,7 +56,7 @@ class WeatherBot extends ActivityHandler {
     }
 
     async sendSuggestedActions(turnContext) {
-        const reply = MessageFactory.suggestedActions(['Show weather', 'Know about me'], 'What do you want to do?');
+        const reply = MessageFactory.suggestedActions(['Show weather', 'Book Flight', 'Know about me'], 'What do you want to do?');
         await turnContext.sendActivity(reply);
     }
 
@@ -84,8 +89,29 @@ class WeatherBot extends ActivityHandler {
                 await this.sendSuggestedActions(context);
             }
             break;
+        case 'Know about me':
+            console.log('Inside info Case');
+            await this.conversationData.set(context, { endDialog: false });
+            await this.KnowMoreDialog.run(context, this.dialogState);
+            conversationData.endDialog = await this.KnowMoreDialog.isDialogComplete();
+            if (conversationData.endDialog) {
+                await this.previousIntent.set(context, { intentName: null });
+                await this.sendSuggestedActions(context);
+            }
+            break;
+        case 'Book Flight':
+            console.log('In book flight case');
+            await this.conversationData.set(context, { endDialog: false });
+            await this.BookFlightDialog.run(context, this.dialogState);
+            conversationData.endDialog = await this.BookFlightDialog.isDialogComplete();
+            if (conversationData.endDialog) {
+                await this.previousIntent.set(context, { intentName: null });
+                await this.sendSuggestedActions(context);
+            }
+            break;
         default:
             console.log('in default case');
+            break;
         }
     }
 }

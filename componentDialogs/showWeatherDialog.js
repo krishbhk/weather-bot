@@ -6,12 +6,13 @@ const dotenv = require('dotenv');
 const ENV_FILE = path.join(__dirname, '.env');
 dotenv.config({ path: ENV_FILE });
 
-const request = require('request');
-
 const { CardFactory } = require('botbuilder');
 
 const WeatherCard = require('../resources/AdaptiveCards/weatherCards.json');
-// const weatherAPICall = require('../resources/api/weatherCall');
+// const request = require('request');
+const { axios } = require('axios');
+const { FetchWeather } = require('../resources/api/weatherCall');
+// const {FetchWeather} = require('./api/WeatherDetails');
 
 const CHOICE_PROPMT = 'CHOICE_PROPMT';
 const CONFIRM_PROPMT = 'CONFIRM_PROPMT';
@@ -97,13 +98,13 @@ class ShowWeatherDialog extends ComponentDialog {
 
     async showResult(step) {
         if (step.result === true) {
-            this.currentWeatherData(step).then((msg)=>{
-                console.log(msg);
-            });
+            // const msg = await this.currentWeatherData(step);
+            const weather = await FetchWeather(step.values.cityName);
+
             // const msg = weatherAPICall(step);
-            // console.log(msg+"hihello");
+            console.log(weather);
             await step.context.sendActivity({
-                // text: msg,
+                text: weather,
                 attachments: [CardFactory.adaptiveCard(WeatherCard)]
             });
             endDialog = true;
@@ -118,21 +119,32 @@ class ShowWeatherDialog extends ComponentDialog {
     async currentWeatherData(step) {
         var url = `https://api.openweathermap.org/data/2.5/weather?q=${ step.values.cityName }&units=metric&appid=${ process.env.weatherAPI }`;
         let message = '';
-        request(url, async function(err, response, body) {
-            if (err) {
-                console.log('error:', err);
-                message = err;
-                // return message;
-            } else {
-                console.log('body:', body);
-                const res = await JSON.parse(body);
-                message = `It's ${ res.main.temp } degrees in ${ res.name }!`;
-                console.log(message + ' fn control data ');
-                // return message;
-            }
-            return await message;
-        });
+        const weather = {};
+        // request(url, async function(err, response, body) {
+        //     if (err) {
+        //         console.log('error:', err);
+        //         message = err;
+        //         // return message;
+        //     } else {
+        //         console.log('body:', body);
+        //         const res = await JSON.parse(body);
+        //         message = `It's ${ res.main.temp } degrees in ${ res.name }!`;
+        //         console.log(message + ' fn control data ');
+        //         // return message;
+        //     }
+        //     return message;
+        // });
         // return message;
+        const res = await axios.get(url);
+        console.log(res.data);
+
+        weather.city = res.data.name;
+        weather.weather = res.data.weather[0].main;
+        weather.description = res.data.weather[0].description;
+        weather.max_temp = res.data.main.temp_min;
+        weather.min_temp = res.data.main.temp_max;
+        message = `Weather of ${ weather.city } is ${ weather.weather } and ${ weather.description } with Min Temperature : ${ weather.min_temp } and Max Temperature : ${ weather.max_temp }`;
+        return await JSON.stringify(message);
     }
 }
 
